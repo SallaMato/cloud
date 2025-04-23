@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
-const cheerio = require("cheerio"); // 👈 Uusi kirjasto HTML:n käsittelyyn
+const cheerio = require("cheerio");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,33 +10,25 @@ app.use(cors());
 
 app.get("/tapahtumat", async (req, res) => {
     const nyt = new Date();
-    const kuukausi = nyt.toLocaleString("fi-FI", { month: "long" });
-    const paiva = nyt.getDate();
+    const kuukausi = nyt.toLocaleString("fi-FI", { month: "long" }).toLowerCase(); // esim. "huhtikuu"
+    const paiva = nyt.getDate(); // esim. 23
 
-    // Muodostetaan otsikko Wikipedia-sivulle, esim. "23._huhtikuuta"
-    const sivuotsikko = `${paiva}._${kuukausi}`;
-    const url = `https://fi.wikipedia.org/w/api.php?action=parse&page=${sivuotsikko}&format=json&origin=*`;
+    const otsikko = `${paiva}._${kuukausi}`; // esim. "23._huhtikuuta"
+    const url = `https://fi.wikipedia.org/wiki/${otsikko}`;
 
     try {
         const vastaus = await fetch(url);
-        const data = await vastaus.json();
-
-        const html = data.parse?.text["*"];
-        if (!html) {
-            return res.json({ tapahtumat: ["Ei löytynyt tapahtumia."] });
-        }
+        const html = await vastaus.text();
 
         const $ = cheerio.load(html);
         const tapahtumat = [];
 
-        // Etsitään "Tapahtumat"-osion sisältö
-        let tapahtumatOsa = $("span#Tapahtumat").parent().nextUntil("h2");
-        tapahtumatOsa.each((_, elem) => {
-            if ($(elem).is("ul")) {
-                $(elem).find("li").each((_, li) => {
-                    tapahtumat.push($(li).text());
-                });
-            }
+        // Etsi "Tapahtumat"-otsikko ja seuraava <ul>
+        const tapahtumatOtsikko = $("span#Tapahtumat").closest("h2");
+        const tapahtumaLista = tapahtumatOtsikko.nextAll("ul").first();
+
+        tapahtumaLista.find("li").each((_, li) => {
+            tapahtumat.push($(li).text());
         });
 
         if (tapahtumat.length === 0) {
