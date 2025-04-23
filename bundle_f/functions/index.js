@@ -9,33 +9,34 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 
 app.get("/tapahtumat", async (req, res) => {
-    const nyt = new Date();
-    const kuukausi = nyt.toLocaleString("fi-FI", { month: "long" }).toLowerCase(); // esim. "huhtikuu"
-    const paiva = nyt.getDate(); // esim. 23
-
-    const otsikko = `${paiva}._${kuukausi}`; // esim. "23._huhtikuuta"
+    // Testataan kiinteällä päivämäärällä: 23. huhtikuuta
+    const otsikko = "23._huhtikuuta";
     const url = `https://fi.wikipedia.org/wiki/${otsikko}`;
 
     try {
         const vastaus = await fetch(url);
         const html = await vastaus.text();
+
         const $ = cheerio.load(html);
         const tapahtumat = [];
 
-        // Etsi otsikko "Tapahtumat", joka on yleensä <span id="Tapahtumat">
-        const tapahtumatAnchor = $('span#Tapahtumat').closest('h2');
+        // Etsitään <h2> jonka sisältö on "Tapahtumat"
+        const otsikkoElem = $("h2").filter((_, elem) => {
+            return $(elem).text().trim().toLowerCase().includes("tapahtumat");
+        }).first();
 
-        if (!tapahtumatAnchor.length) {
-            return res.json({ tapahtumat: ["Tapahtumia ei löytynyt."] });
+        if (!otsikkoElem.length) {
+            return res.json({ tapahtumat: ["Tapahtumat-osiota ei löytynyt."] });
         }
 
-        // Haetaan kaikki <ul>-elementit, jotka seuraavat tätä otsikkoa
-        let seuraava = tapahtumatAnchor.next();
-        while (seuraava.length && seuraava[0].tagName !== 'h2') {
-            if (seuraava[0].tagName === 'ul') {
-                seuraava.find('li').each((_, li) => {
-                    tapahtumat.push($(li).text());
+        // Haetaan seuraavat <ul> elementit sen jälkeen
+        let seuraava = otsikkoElem.next();
+        while (seuraava.length && seuraava[0].tagName !== "h2") {
+            if (seuraava[0].tagName === "ul") {
+                seuraava.find("li").each((_, li) => {
+                    tapahtumat.push($(li).text().trim());
                 });
+                break; // Haetaan vain ensimmäinen tapahtumalista
             }
             seuraava = seuraava.next();
         }
@@ -50,6 +51,7 @@ app.get("/tapahtumat", async (req, res) => {
         res.status(500).json({ error: "Virhe haettaessa tietoa." });
     }
 });
+
 
 app.listen(PORT, () => {
     console.log(`Palvelin käynnissä portissa ${PORT}`);
