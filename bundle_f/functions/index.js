@@ -10,8 +10,8 @@ app.use(cors());
 
 app.get("/tapahtumat", async (req, res) => {
     const nyt = new Date();
-    const kuukausi = nyt.toLocaleString("fi-FI", { month: "long" }).toLowerCase(); // esim. "huhtikuu"
-    const paiva = nyt.getDate(); // esim. 23
+    const kuukausi = nyt.toLocaleString("fi-FI", { month: "long" }).toLowerCase();
+    const paiva = nyt.getDate();
 
     const otsikko = `${paiva}._${kuukausi}`; // esim. "23._huhtikuuta"
     const url = `https://fi.wikipedia.org/wiki/${otsikko}`;
@@ -23,10 +23,12 @@ app.get("/tapahtumat", async (req, res) => {
         const $ = cheerio.load(html);
         const tapahtumat = [];
 
-        // Etsi "Tapahtumat"-otsikko ja seuraava <ul>
-        const tapahtumatOtsikko = $("span#Tapahtumat").closest("h2");
-        const tapahtumaLista = tapahtumatOtsikko.nextAll("ul").first();
+        // Etsitään <h2> jonka otsikkoteksti on "Tapahtumat"
+        const otsikkoElem = $("h2").filter((_, elem) => {
+            return $(elem).text().toLowerCase().includes("tapahtumat");
+        }).first();
 
+        const tapahtumaLista = otsikkoElem.nextAll("ul").first();
         tapahtumaLista.find("li").each((_, li) => {
             tapahtumat.push($(li).text());
         });
@@ -41,6 +43,7 @@ app.get("/tapahtumat", async (req, res) => {
         res.status(500).json({ error: "Virhe haettaessa tietoa." });
     }
 });
+
 
 app.listen(PORT, () => {
     console.log(`Palvelin käynnissä portissa ${PORT}`);
