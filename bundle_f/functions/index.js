@@ -23,17 +23,24 @@ app.get("/tapahtumat", async (req, res) => {
         const $ = cheerio.load(html);
         const tapahtumat = [];
 
-        // Etsitään <h2> joka sisältää ID:n "Tapahtumia"
-        const tapahtumatOtsikko = $("h2#Tapahtumia");
+        // Etsi oikea <h2>, jonka sisällä on span.mw-headline ja teksti "Tapahtumia"
+        let tapahtumatOtsikko = null;
 
-        if (tapahtumatOtsikko.length === 0) {
+        $("h2").each((_, el) => {
+            const otsikkoTeksti = $(el).find("span.mw-headline").text().trim();
+            if (otsikkoTeksti === "Tapahtumia") {
+                tapahtumatOtsikko = $(el);
+                return false; // break loop
+            }
+        });
+
+        if (!tapahtumatOtsikko) {
             return res.json({ tapahtumat: ["Ei löytynyt tapahtumia."] });
         }
 
-        // Etsitään seuraava <ul>-elementti, joka sisältää tapahtumat
+        // Etsi seuraava <ul>-lista
         const tapahtumaLista = tapahtumatOtsikko.nextAll("ul").first();
 
-        // Käydään lista läpi ja lisätään jokainen tapahtuma
         tapahtumaLista.find("li").each((_, li) => {
             tapahtumat.push($(li).text());
         });
@@ -48,6 +55,7 @@ app.get("/tapahtumat", async (req, res) => {
         res.status(500).json({ error: "Virhe haettaessa tietoa." });
     }
 });
+
 
 app.listen(PORT, () => {
     console.log(`Palvelin käynnissä portissa ${PORT}`);
