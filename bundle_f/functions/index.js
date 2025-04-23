@@ -23,11 +23,17 @@ app.get("/tapahtumat", async (req, res) => {
         const $ = cheerio.load(html);
         const tapahtumat = [];
 
-        // Haetaan "Tapahtumia" otsikko ja sen alla oleva lista
-        const tapahtumatOtsikko = $("#mw-content-text > div.mw-content-ltr.mw-parser-output > div:nth-child(6)");
-        const tapahtumaLista = $("#mw-content-text > div.mw-content-ltr.mw-parser-output > ul:nth-child(9)");
+        // Etsitään <h2> joka sisältää ID:n "Tapahtumia"
+        const tapahtumatOtsikko = $("h2#Tapahtumia");
 
-        // Jos lista löytyy, kerätään tapahtumat
+        if (tapahtumatOtsikko.length === 0) {
+            return res.json({ tapahtumat: ["Ei löytynyt tapahtumia."] });
+        }
+
+        // Etsitään seuraava <ul>-elementti, joka sisältää tapahtumat
+        const tapahtumaLista = tapahtumatOtsikko.nextAll("ul").first();
+
+        // Käydään lista läpi ja lisätään jokainen tapahtuma
         tapahtumaLista.find("li").each((_, li) => {
             tapahtumat.push($(li).text());
         });
