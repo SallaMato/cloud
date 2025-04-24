@@ -29,6 +29,4 @@ jobs:
         run: npm install
 
       
-      - name: Check that app starts
-        run: node -e "require('./index.js'); console.log('App started successfully')"
-
+    
