@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elokuvahaku</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <h1>Hae elokuva</h1>
+    <form action="/search" method="POST">
+        <input type="text" name="title" placeholder="Elokuvan nimi" required>
+        <button type="submit">Hae</button>
+    </form>
+   
+    <% if (error) { %>
+        <p><%=error%></p>
+        <% } %>
+
+    <% if (movie) { %>
+    <h2><%= movie.Title%> (<%= movie.Year%>)</h2>
+    <p><strong>Genre:</strong><%= movie.Genre%></p>
+    <p><strong>Ohjaaja:</strong><%= movie.Director%></p>
+    <p><strong>Juoni:</strong><%= movie.Plot%></p>
+    <img src="<%= movie.Poster%>" alt="Juliste" style="max-width:200px;">
+
+    <%}%>
+</body>
+</html>
