@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <title>Sääpalvelu</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Hae Sää</h1>
+        <input type="text" id="cityInput" placeholder="Syötä kaupunki">
+        <button onclick="getWeather()">Hae</button>
+        <div id="weatherResult"></div>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value;
+            if (!city) return alert('Syötä kaupunki!');
+
+            try {
+                const response = await fetch(`/weather?city=${city}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('weatherResult').innerText = 'Virhe: ' + data.error;
+                    return;
+                }
+
+                document.getElementById('weatherResult').innerHTML = `
+                    <h2>${data.city}</h2>
+                    <p>Lämpötila: ${data.temperature}°C</p>
+                    <p>Kuvaus: ${data.description}</p>
+                `;
+            } catch (error) {
+                document.getElementById('weatherResult').innerText = 'Virhe haettaessa säätietoja.';
+            }
+        }
+    </script>
+</body>
+</html>
